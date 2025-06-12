@@ -1,6 +1,6 @@
-# Another Rules Engine (ARE)
+# ARE Rules Engine for Json
 
-A flexible, generic rules engine for validating JSON objects. Supports complex conditions, array traversal, date-based rule activation, and a wide range of operators. Works in both Node.js and browser environments.
+A flexible, generic rules engine for JSON objects. Supports complex conditions, array traversal, date-based rule activation, and a wide range of operators. Works in both Node.js and browser environments.
 
 
 ## Motivation
