@@ -1,11 +1,6 @@
-# ARE Rules Engine for Json
+# Ajre Json Rules Engine 
 
 A flexible, generic rules engine for JSON objects. Supports complex conditions, array traversal, date-based rule activation, and a wide range of operators. Works in both Node.js and browser environments.
-
-
-## Motivation
-While JSON Schema offers robust tools for defining validation rules, it can fall short when dealing with more complex scenarios involving contextual logic. This library is intended to complement the native capabilities of JSON Schema, enabling developers to express advanced validation rules in a more intuitive and maintainable way — without replacing the existing validation flow.
-
 
 
 ## Installation
@@ -53,7 +48,7 @@ const rules = [
     type: 'ERROR',
     description: 'Age must be greater than 18',
     conditions: [
-      { ref: 'age', operator: '>', comparisonValue: 18 }
+      { ref: 'age', operator: '<', comparisonValue: 18 }
     ]
   },
   // Compare two fields from document
@@ -62,7 +57,7 @@ const rules = [
     type: 'REF',
     description: 'Score must be equal to minScore',
     conditions: [
-      { ref: 'score', operator: '=', comparisonRef: 'minScore' }
+      { ref: 'score', operator: '<>', comparisonRef: 'minScore' }
     ]
   },
   // Compare document field with context field
@@ -71,7 +66,7 @@ const rules = [
     type: 'CTX',
     description: 'Score must be equal to context meta.score',
     conditions: [
-      { ref: 'score', operator: '=', comparisonRef: '_context.meta.score' }
+      { ref: 'score', operator: '<>', comparisonRef: '_context.meta.score' }
     ]
   },
   // Compare two fields from context
@@ -80,7 +75,7 @@ const rules = [
     type: 'CTX',
     description: 'Context meta.score must be >= context meta.minScore',
     conditions: [
-      { ref: '_context.meta.score', operator: '>=', comparisonRef: '_context.meta.minScore' }
+      { ref: '_context.meta.score', operator: '<', comparisonRef: '_context.meta.minScore' }
     ]
   },
   // Use contextObj directly
@@ -89,7 +84,7 @@ const rules = [
     type: 'CTX',
     description: 'User type must be admin',
     conditions: [
-      { ref: '_context.userType', operator: '=', comparisonValue: 'admin' }
+      { ref: '_context.userType', operator: '<>', comparisonValue: 'admin' }
     ]
   }
 ];
@@ -99,6 +94,10 @@ console.log(result);
 ```
 
 ## API: validateRules(documentJson, rules, contextObj = null, options = {})
+
+### Return value
+
+The function returns an array of rules for which **all conditions were satisfied** (that is, all conditions returned true for the given document/context). If a rule does not have all its conditions satisfied, it will not appear in the result.
 
 ### Parameters
 
@@ -176,7 +175,7 @@ Each rule is an object with the following structure:
 ```js
 {
   id: 'unique_rule_id',
-  type: 'ERROR' | 'WARNING' | 'INFO',
+  type: 'ERROR' | 'WARNING' | 'INFO' | '...', 
   description: 'Rule description',
   initialDate: '2024-01-01T00:00:00Z', // (optional) rule is active from this date
   endDate: '2024-12-31T23:59:59Z',     // (optional) rule is active until this date
