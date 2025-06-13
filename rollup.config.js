@@ -13,11 +13,18 @@ export default {
       file: 'dist/index.cjs',
       format: 'cjs',
       sourcemap: true
+    },
+    {
+      file: 'dist/ajre-json-rules-engine.umd.js',
+      format: 'umd',
+      name: 'AjreJsonRulesEngine',
+      sourcemap: true,
+      exports: 'named',
     }
   ],
   plugins: [
     resolve(),
     commonjs()
-  ],
-  external: ['object-path']
+  ]
+  // Não defina 'external', para que object-path seja incluído no bundle
 }; 
