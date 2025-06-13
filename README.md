@@ -116,10 +116,12 @@ The function returns an array of rules for which **all conditions were satisfied
     *Default: 10000*
   - **timeLimit**: Maximum time (in seconds) for context generation per rule.  
     *Default: 200*
+  - **returnAllContexts**: If true (default), returns all valid contexts for each rule. If false, stops and returns only the first valid context found for each rule (improves performance in large datasets).  
+    *Default: true*
 
   **Example:**
   ```js
-  const result = validateRules(document, rules, contextObj, { contextLimit: 5000, timeLimit: 60 });
+  const result = validateRules(document, rules, contextObj, { contextLimit: 5000, timeLimit: 60, returnAllContexts: false });
   ```
 
 ---

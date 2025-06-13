@@ -18,14 +18,16 @@ import objectPath from 'object-path';
  * @param {object} documentJson The JSON document to validate.
  * @param {Array<object>} rules The array of rules to validate.
  * @param {object|null} contextObj Optional context object. If provided, rules can reference it using '_context.' in their paths.
- * @param {object} options Optional settings: { contextLimit: number (default 10000), timeLimit: number (seconds, default 200) }
+ * @param {object} options Optional settings: { contextLimit: number (default 10000), timeLimit: number (seconds, default 200), returnAllContexts: boolean (default true) }
  * @return {Array<object>} An array of objects containing the IDs and types of the rules that passed, along with their contexts.
  */
 export function validateRules(documentJson, rules, contextObj = null, options = {}) {
+  const rulesObj = JSON.parse(JSON.stringify(rules));
   const contextLimit = options.contextLimit !== undefined ? options.contextLimit : 10000;
   const timeLimit = options.timeLimit !== undefined ? options.timeLimit : 200; // seconds
+  const returnAllContexts = options.returnAllContexts !== undefined ? options.returnAllContexts : true;
   const results = [];
-  const validRulesByDate = filterRulesByDate(rules);
+  const validRulesByDate = filterRulesByDate(rulesObj);
   const startTime = Date.now();
 
   validRulesByDate.forEach((rule) => {
@@ -47,7 +49,7 @@ export function validateRules(documentJson, rules, contextObj = null, options = 
       if (rule.contexts.length === 0) {
         rule.conditionsResult = evaluateSimpleConditions(documentJson, rule.conditions, contextObj);
       } else {
-        rule.conditionResultContext = evaluateConditionsInContexts(documentJson, rule, loops, contextObj);
+        rule.conditionResultContext = evaluateConditionsInContexts(documentJson, rule, loops, contextObj, returnAllContexts);
       }
 
       addRuleToResults(rule, results);
@@ -303,50 +305,59 @@ function evaluateSimpleConditions(documentJson, conditions, contextObj = null) {
  * @param {object} rule The rule being evaluated.
  * @param {Array<object>} loops The loops to consider.
  * @param {object|null} contextObj Optional context object. If provided, rules can reference it using '_context.' in their ref or comparisonRef paths.
+ * @param {boolean} returnAllContexts Whether to return all contexts or stop at the first valid one.
  * @return {Array<object>} The results of the evaluation for each context.
  */
-function evaluateConditionsInContexts(documentJson, rule, loops, contextObj = null) {
-  return rule.contexts.map((context) => {
+function evaluateConditionsInContexts(documentJson, rule, loops, contextObj = null, returnAllContexts = true) {
+  const results = [];
+  for (const context of rule.contexts) {
     const conditionsInContext = rule.conditions.map((condition) =>
       replaceContextValues(condition, loops, context),
     );
 
-    return conditionsInContext.reduce(
-        (prevItem, condition) => {
-          if (prevItem.result) {
-            try {
-              // Suporte a comparisonRef
-              if (condition.comparisonValue !== undefined && condition.comparisonRef !== undefined) {
-                throw new Error('A condition cannot have both comparisonValue and comparisonRef.');
-              }
-              const leftValue = getValueWithContext(documentJson, condition.ref, contextObj);
-              let rightValue;
-              if (condition.comparisonRef !== undefined) {
-                rightValue = getValueWithContext(documentJson, condition.comparisonRef, contextObj);
-              } else {
-                rightValue = condition.comparisonValue;
-              }
-              const test = testCondition(leftValue, rightValue, condition.operator);
-              if (test) {
-                prevItem.conditionValues.push({
-                  instancePath: condition.ref,
-                  instancePathValue: leftValue,
-                  operator: condition.operator,
-                  comparisonValue: rightValue,
-                });
-                return {result: true, conditionValues: prevItem.conditionValues};
-              }
-              return {result: false, conditionValues: prevItem.conditionValues};
-            } catch (error) {
-              logError('Error in evaluateConditionsInContexts', error);
-              throw new Error(`Failed to evaluate conditions in one context in rule [${rule.id}].`);
+    const evaluation = conditionsInContext.reduce(
+      (prevItem, condition) => {
+        if (prevItem.result) {
+          try {
+            if (condition.comparisonValue !== undefined && condition.comparisonRef !== undefined) {
+              throw new Error('A condition cannot have both comparisonValue and comparisonRef.');
             }
+            const leftValue = getValueWithContext(documentJson, condition.ref, contextObj);
+            let rightValue;
+            if (condition.comparisonRef !== undefined) {
+              rightValue = getValueWithContext(documentJson, condition.comparisonRef, contextObj);
+            } else {
+              rightValue = condition.comparisonValue;
+            }
+            const test = testCondition(leftValue, rightValue, condition.operator);
+            if (test) {
+              prevItem.conditionValues.push({
+                instancePath: condition.ref,
+                instancePathValue: leftValue,
+                operator: condition.operator,
+                comparisonValue: rightValue,
+              });
+              return {result: true, conditionValues: prevItem.conditionValues};
+            }
+            return {result: false, conditionValues: prevItem.conditionValues};
+          } catch (error) {
+            logError('Error in evaluateConditionsInContexts', error);
+            throw new Error(`Failed to evaluate conditions in one context in rule [${rule.id}].`);
           }
-          return {result: false, conditionValues: prevItem.conditionValues};
-        },
-        {result: true, conditionValues: []},
+        }
+        return {result: false, conditionValues: prevItem.conditionValues};
+      },
+      {result: true, conditionValues: []},
     );
-  });
+
+    if (evaluation.result) {
+      results.push(evaluation);
+      if (!returnAllContexts) {
+        return results;
+      }
+    }
+  }
+  return results;
 }
 
 /**
@@ -424,18 +435,15 @@ function replaceContextValues(condition, loops, context) {
  */
 function addRuleToResults(rule, results) {
   try {
-    if (rule.conditionResultContext.length > 0) {
-      const trueInstances = rule.conditionResultContext.filter((item) => item.result);
-      if (trueInstances.length > 0) {
-        results.push({
-          id: rule.id,
-          type: rule.type,
-          message: rule.description,
-          conditions: trueInstances,
-          keyword: 'conditional',
-        });
-      }
-    } else if (rule.conditionsResult.response) {
+    if (rule.conditionResultContext && rule.conditionResultContext.length > 0) {
+      results.push({
+        id: rule.id,
+        type: rule.type,
+        message: rule.description,
+        conditions: rule.conditionResultContext,
+        keyword: 'conditional',
+      });
+    } else if (rule.conditionsResult && rule.conditionsResult.response && rule.conditionsResult.items && rule.conditionsResult.items.length > 0) {
       results.push({
         id: rule.id,
         type: rule.type,

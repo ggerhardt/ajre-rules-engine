@@ -26,6 +26,7 @@ describe('validateRules', () => {
     ];
     const rulesCheck = validateRules(documentJson, rules);
     expect(rulesCheck.length).toEqual(6);
+    rulesCheck.forEach(r => expect(r.errors).toBeUndefined());
   });
 
   test('does not return rules when basic operators do not match', () => {
@@ -51,6 +52,7 @@ describe('validateRules', () => {
 
     const rulesCheck = validateRules(documentJson, rules);
     expect(rulesCheck.length).toEqual(3);
+    rulesCheck.forEach(r => expect(r.errors).toBeUndefined());
   });
 
   test('validates rules with array operators', () => {
@@ -61,6 +63,7 @@ describe('validateRules', () => {
 
     const rulesCheck = validateRules(documentJson, rules);
     expect(rulesCheck.length).toEqual(2);
+    rulesCheck.forEach(r => expect(r.errors).toBeUndefined());
   });
 
   test('validates rules with existence operators', () => {
@@ -71,6 +74,7 @@ describe('validateRules', () => {
 
     const rulesCheck = validateRules(documentJson, rules);
     expect(rulesCheck.length).toEqual(2);
+    rulesCheck.forEach(r => expect(r.errors).toBeUndefined());
   });
 });
 
@@ -124,6 +128,7 @@ describe('validateRules - initialDate and endDate', () => {
   test('includes rules without initialDate/endDate', () => {
     const result = validateRules(baseDocument, [alwaysValidRule]);
     expect(result.some(r => r.id === 'rule1')).toBe(true);
+    result.forEach(r => expect(r.errors).toBeUndefined());
   });
 
   test('excludes rules with initialDate in the future', () => {
@@ -139,6 +144,7 @@ describe('validateRules - initialDate and endDate', () => {
   test('includes rules valid for the current date', () => {
     const result = validateRules(baseDocument, [validNowRule]);
     expect(result.some(r => r.id === 'rule4')).toBe(true);
+    result.forEach(r => expect(r.errors).toBeUndefined());
   });
 
   test('filters only valid rules among mixed rules', () => {
@@ -148,6 +154,7 @@ describe('validateRules - initialDate and endDate', () => {
     expect(ids).toContain('rule4');
     expect(ids).not.toContain('rule2');
     expect(ids).not.toContain('rule3');
+    result.forEach(r => expect(r.errors).toBeUndefined());
   });
 });
 
@@ -175,6 +182,7 @@ describe('businessRules operators test', () => {
     const results = validateRules(jsonDocument, rules);
 
     expect(results.length).toBe(1);
+    results.forEach(r => expect(r.errors).toBeUndefined());
   });
   test('does not return rule when string equality does not match', async () => {
     const rules = [{
@@ -281,6 +289,7 @@ describe('validateRules with contextObj', () => {
     ];
     const result = validateRules(documentJson, rules, contextObj);
     expect(result.length).toBe(3);
+    result.forEach(r => expect(r.errors).toBeUndefined());
     expect(result[0].id).toBe(1);
     expect(result[1].id).toBe(2);
     expect(result[2].id).toBe(3);
@@ -305,6 +314,7 @@ describe('validateRules with contextObj', () => {
     ];
     const result = validateRules(documentJson, rules, contextObj);
     expect(result.length).toBe(1);
+    result.forEach(r => expect(r.errors).toBeUndefined());
     expect(result[0].id).toBe(5);
   });
 });
@@ -337,6 +347,7 @@ describe('validateRules with comparisonRef', () => {
     ];
     const result = validateRules(documentJson, rules, contextObj);
     expect(result.length).toBe(3);
+    result.forEach(r => expect(r.errors).toBeUndefined());
     expect(result[0].id).toBe(1);
     expect(result[1].id).toBe(2);
     expect(result[2].id).toBe(3);
@@ -353,6 +364,7 @@ describe('validateRules with comparisonRef', () => {
     ];
     const result = validateRules(documentJson, rules, contextObj);
     expect(result.length).toBe(2);
+    result.forEach(r => expect(r.errors).toBeUndefined());
     expect(result[0].id).toBe(4);
     expect(result[1].id).toBe(5);
   });
@@ -365,6 +377,7 @@ describe('validateRules with comparisonRef', () => {
     ];
     const result = validateRules(documentJson, rules, contextObj);
     expect(result.length).toBe(1);
+    result.forEach(r => expect(r.errors).toBeUndefined());
     expect(result[0].id).toBe(6);
   });
 
@@ -406,6 +419,7 @@ it('deve gerar contextos corretamente quando ref e comparisonRef referenciam o m
 
   const result = validateRules(documentJson, rules);
   expect(result.length).toBe(1);
+  result.forEach(r => expect(r.errors).toBeUndefined());
   // Só o primeiro passa (20 > 18)
   expect(result[0].conditions[0].conditionValues.length).toBe(1);
   expect(result[0].conditions[0].conditionValues[0].instancePathValue).toBe(20);
@@ -442,6 +456,7 @@ it('deve gerar contextos cruzados quando ref e comparisonRef referenciam arrays 
   const result = validateRules(documentJson, rules);
   // Como são 2x2 combinações, espera-se 4 contextos
   expect(result.length).toBe(1);
+  result.forEach(r => expect(r.errors).toBeUndefined());
   // Cada contexto avaliado individualmente
   // O resultado pode variar conforme a implementação, mas garantimos que há pelo menos 1 condição verdadeira
   const totalTrue = result[0].conditions.reduce((acc, ctx) => acc + ctx.conditionValues.length, 0);
@@ -475,6 +490,7 @@ it('deve funcionar quando apenas comparisonRef referencia array', () => {
 
   const result = validateRules(documentJson, rules);
   expect(result.length).toBe(1);
+  result.forEach(r => expect(r.errors).toBeUndefined());
   // Deve avaliar para cada item do array referencias
   // O resultado pode variar conforme a implementação, mas garantimos que há pelo menos 1 condição verdadeira
   const totalTrue = result[0].conditions.reduce((acc, ctx) => acc + ctx.conditionValues.length, 0);
@@ -497,7 +513,7 @@ describe('validateRules contextLimit', () => {
         ]
       }
     ];
-    // Com 101x101 = 10201 contextos, deve estourar o limite padrão (10000)
+    // Com 101x101 = 10201 contextos, deve estourar o limite padrão (npm00)
     const result = validateRules(documentJson, rules);
     const limitError = result.find(r => r.keyword === 'context_limit');
     expect(limitError).toBeDefined();
@@ -523,5 +539,77 @@ describe('validateRules contextLimit', () => {
     const result = validateRules(documentJson, rules, null, { contextLimit: 3000 });
     const limitError = result.find(r => r.keyword === 'context_limit');
     expect(limitError).toBeUndefined();
+    result.forEach(r => expect(r.errors).toBeUndefined());
+  });
+});
+
+describe('validateRules - returnAllContexts option', () => {
+  test('should stop at first valid context when returnAllContexts is false', () => {
+    const document = {
+      items: [
+        { value: 1 },
+        { value: 2 },
+        { value: 3 }
+      ]
+    };
+    const rules = [
+      {
+        id: 'rule1',
+        type: 'test',
+        description: 'At least one item with value > 1',
+        conditions: [
+          { ref: 'items[].value', operator: '>', comparisonValue: 1 }
+        ]
+      }
+    ];
+
+    // returnAllContexts: true (default) - retorna todos os contextos válidos
+    const allContexts = validateRules(document, rules, null, { returnAllContexts: true });
+    expect(Array.isArray(allContexts[0].conditions)).toBe(true);
+    expect(allContexts[0].conditions.length).toBe(2); // valores 2 e 3
+    allContexts.forEach(r => expect(r.errors).toBeUndefined());
+
+    // returnAllContexts: false - retorna apenas o primeiro contexto válido
+    const firstContext = validateRules(document, rules, null, { returnAllContexts: false });
+    expect(Array.isArray(firstContext)).toBe(true);
+    expect(firstContext.length).toBeGreaterThan(0);
+    expect(Array.isArray(firstContext[0].conditions)).toBe(true);
+    expect(firstContext[0].conditions.length).toBe(1); // apenas o primeiro valor > 1
+    expect(firstContext[0].conditions[0].conditionValues[0].instancePathValue).toBe(2);
+    firstContext.forEach(r => expect(r.errors).toBeUndefined());
+
+    // Caso nenhum contexto válido
+    const noValid = validateRules({ items: [{ value: 0 }] }, rules, null, { returnAllContexts: false });
+    expect(Array.isArray(noValid)).toBe(true);
+    expect(noValid.length).toBe(0);
+  });
+});
+
+describe('Benchmark de performance - returnAllContexts', () => {
+  it('compara o tempo de execução com muitos contextos', () => {
+    const tamanho = 200; // 200x200 = 40.000 contextos
+    const documentJson = {
+      arr1: Array.from({ length: tamanho }, (_, i) => ({ x: i })),
+      arr2: Array.from({ length: tamanho }, (_, i) => ({ y: i })),
+    };
+    const rules = [
+      {
+        id: 'perf',
+        type: 'PERFORMANCE',
+        description: 'Teste de performance',
+        conditions: [
+          { ref: 'arr1[].x', operator: '=', comparisonRef: 'arr2[].y' }
+        ]
+      }
+    ];
+    console.time('Tempo - returnAllContexts: true');
+    const resAll = validateRules(documentJson, rules, null, { returnAllContexts: true, contextLimit: 50000 });
+    resAll.forEach(r => expect(r.errors).toBeUndefined());
+    console.timeEnd('Tempo - returnAllContexts: true');
+
+    console.time('Tempo - returnAllContexts: false');
+    const resFirst = validateRules(documentJson, rules, null, { returnAllContexts: false, contextLimit: 50000 });
+    resFirst.forEach(r => expect(r.errors).toBeUndefined());
+    console.timeEnd('Tempo - returnAllContexts: false');
   });
 });
