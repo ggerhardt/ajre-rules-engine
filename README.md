@@ -6,7 +6,7 @@ A flexible, generic rules engine for JSON objects. Supports complex conditions, 
 ## Installation
 
 ```bash
-npm install another-rules-engine
+npm install another-json-rules-engine
 ```
 
 ## Usage Example
@@ -15,12 +15,12 @@ npm install another-rules-engine
 
 #### ES Modules (import)
 ```js
-import { validateRules } from 'another-rules-engine';
+import { validateRules } from 'another-json-rules-engine';
 ```
 
 #### CommonJS (require)
 ```js
-const { validateRules } = require('another-rules-engine');
+const { validateRules } = require('another-json-rules-engine');
 ```
 
 ### Example
