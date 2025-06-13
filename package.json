@@ -1,6 +1,6 @@
 {
   "name": "another-json-rules-engine",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Another Json Rules Engine: a flexible rules engine for validating JSON objects in Node.js and browser.",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
